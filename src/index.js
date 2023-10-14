@@ -1,38 +1,46 @@
-// Імпорт бібліотек
 import axios from 'axios';
 import Notiflix from 'notiflix';
 import SimpleLightbox from 'simplelightbox';
 import 'simplelightbox/dist/simple-lightbox.min.css';
 
+const lightbox = new SimpleLightbox('.gallery a', {});
+
 document.addEventListener('DOMContentLoaded', () => {
   const form = document.getElementById('search-form');
   const gallery = document.querySelector('.gallery');
   const loadMoreBtn = document.querySelector('.load-more');
-  const apiKey = '39918307-8b625420c7ffb23731f2d93d1';
-  // Отримуємо всі картинки з галереї
-  const galleryImages = document.querySelectorAll('.photo-card img');
-  const lightbox = new SimpleLightbox('.gallery img', {
-    /* SimpleLightbox options */
-    // Отримуємо всі картинки з галереї
-  });
+  const apiKey = '39826341-72b32bf5f28bdbe6242a5fe09';
+  let page = 1;
+  let totalHits = 0;
+  let isLightboxOpen = false;
 
-  // Додаємо обробку кліку на кожну картинку
-  galleryImages.forEach((image, index) => {
-    image.addEventListener('click', () => {
-      // Знаходимо індекс клікнутої картинки
-      const index = Array.from(galleryImages).indexOf(image);
-      // Відкриваємо велику версію картинки в SimpleLightbox
-      lightbox.openAt(index);
-    });
-  });
+  const openLightbox = () => {
+    lightbox.open();
+    isLightboxOpen = true;
+    document.addEventListener('keydown', handleKeyPress);
+  };
 
-  let page = 1; // Ініціалізуємо номер сторінки
-  let totalHits = 0; // Зберігаємо загальну кількість знайдених зображень
+  const closeLightbox = () => {
+    lightbox.close();
+    isLightboxOpen = false;
+    document.removeEventListener('keydown', handleKeyPress);
+  };
 
-  // Функція для отримання зображень на основі введеного користувачем запиту та номеру сторінки
+  const handleKeyPress = event => {
+    if (!isLightboxOpen) return;
+    if (event.key === 'Escape') {
+      closeLightbox();
+    } else if (event.key === 'ArrowRight') {
+      lightbox.next();
+    } else if (event.key === 'ArrowLeft') {
+      lightbox.prev();
+    }
+  };
+
   const fetchImages = async (searchQuery, pageNum) => {
     try {
       const response = await axios.get('https://pixabay.com/api/', {
+        BASE_URL: 'https://pixabay.com/api/',
         params: {
           key: apiKey,
           q: searchQuery,
@@ -47,16 +55,14 @@ document.addEventListener('DOMContentLoaded', () => {
       const { data } = response;
 
       if (pageNum === 1) {
-        // Якщо це перший запит, встановлюємо totalHits
         totalHits = data.totalHits;
         if (totalHits > 0) {
           Notiflix.Notify.success(`Hooray! We found ${totalHits} images.`);
         }
-        gallery.innerHTML = ''; // Очищаємо галерею перед новим запитом
+        gallery.innerHTML = '';
       }
 
       if (data.hits.length === 0) {
-        // Перевірка на порожній масив
         Notiflix.Notify.failure(
           'Sorry, there are no images matching your search query. Please try again.'
         );
@@ -64,6 +70,7 @@ document.addEventListener('DOMContentLoaded', () => {
       } else {
         renderImages(data.hits);
         loadMoreBtn.style.display = 'block';
+        lightbox.refresh(); // Оновити групу зображень для SimpleLightbox
       }
 
       const perPage = data.perPage || 20;
@@ -77,9 +84,13 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
-  // Функція для відображення карток зображень в галереї
   const renderImages = images => {
     images.forEach(image => {
+      const a = document.createElement('a');
+      a.href = image.largeImageURL; // Посилання на велику версію зображення
+      a.dataset - lightbox;
+      ('image'); // Встановити атрибут для SimpleLightbox
+
       const card = document.createElement('div');
       card.classList.add('photo-card');
 
@@ -112,7 +123,8 @@ document.addEventListener('DOMContentLoaded', () => {
       info.appendChild(comments);
       info.appendChild(downloads);
 
-      card.appendChild(img);
+      card.appendChild(a);
+      a.appendChild(img);
       card.appendChild(info);
 
       gallery.appendChild(card);
@@ -128,7 +140,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   };
 
-  // Функція для обробки події відправки форми
   const handleSubmit = async e => {
     e.preventDefault();
     const searchQuery = e.target.searchQuery.value;
@@ -136,27 +147,23 @@ document.addEventListener('DOMContentLoaded', () => {
     await fetchImages(searchQuery, page);
   };
 
-  // Функція для обробки кліку на кнопку "Завантажити ще"
   const handleLoadMore = async () => {
-    page++; // Збільшуємо номер сторінки
-    const searchQuery = form.searchQuery.value; // Отримуємо рядок пошуку з форми
+    page++;
+    const searchQuery = form.searchQuery.value;
     await fetchImages(searchQuery, page);
 
     if (totalHits - page * 40 > 0) {
       Notiflix.Notify.success(
         `Hooray! We found ${totalHits - page * 40} images.`
-      ); // Викликаємо функцію для отримання
+      );
     }
-    if (totalHits <= page * perPage) {
+    if (totalHits <= page * 40) {
       loadMoreBtn.style.display = 'none';
-      // Notiflix.Notify.info(
-      //   "We're sorry, but you've reached the end of search results."
-      // );
     }
   };
 
-  form.addEventListener('submit', handleSubmit); // Додаємо обробник події для форми
-  loadMoreBtn.addEventListener('click', handleLoadMore); // Додаємо обробник події для кнопки "Завантажити ще"
+  form.addEventListener('submit', handleSubmit);
+  loadMoreBtn.addEventListener('click', handleLoadMore);
 
   window.addEventListener('scroll', () => {
     const footer = document.querySelector('footer');
