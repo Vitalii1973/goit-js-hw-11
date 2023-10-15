@@ -88,8 +88,7 @@ document.addEventListener('DOMContentLoaded', () => {
     images.forEach(image => {
       const a = document.createElement('a');
       a.href = image.largeImageURL; // Посилання на велику версію зображення
-      a.dataset - lightbox;
-      ('image'); // Встановити атрибут для SimpleLightbox
+      a.dataset.lightbox = 'image'; // Встановити атрибут для SimpleLightbox
 
       const card = document.createElement('div');
       card.classList.add('photo-card');
@@ -164,18 +163,4 @@ document.addEventListener('DOMContentLoaded', () => {
 
   form.addEventListener('submit', handleSubmit);
   loadMoreBtn.addEventListener('click', handleLoadMore);
-
-  window.addEventListener('scroll', () => {
-    const footer = document.querySelector('footer');
-    const gallery = document.querySelector('.gallery');
-    const windowHeight = window.innerHeight;
-    const galleryHeight = gallery.getBoundingClientRect().height;
-    const scrollY = window.scrollY;
-
-    if (scrollY > galleryHeight - windowHeight) {
-      footer.style.display = 'block';
-    } else {
-      footer.style.display = 'none';
-    }
-  });
 });
